@@ -1,0 +1,53 @@
+name: Deploy to Local Kubernetes
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Test environment
+        run: |
+          echo "Testing environment..."
+          kubectl cluster-info
+          docker --version
+          
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image..."
+          docker build -t local-app:${{ github.sha }} .
+          docker tag local-app:${{ github.sha }} local-app:latest
+          
+      - name: Deploy to Kubernetes
+        run: |
+          echo "Deploying to Kubernetes..."
+          kubectl apply -f k8s/
+          
+          # Update deployment image
+          kubectl set image deployment/local-app app=local-app:${{ github.sha }} -n local-app
+          
+          # Wait for rollout
+          kubectl rollout status deployment/local-app -n local-app --timeout=300s
+          
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployment..."
+          kubectl get pods -n local-app
+          kubectl get service -n local-app
+          
+          # Test the service
+          kubectl port-forward svc/local-app-service 8080:80 -n local-app &
+          sleep 5
+          curl -f http://localhost:8080/ || exit 1
+          
+      - name: Cleanup old images
+        run: |
+          echo "Cleaning up old Docker images..."
+          docker image prune -f
