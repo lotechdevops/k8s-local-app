@@ -1,5 +1,12 @@
 const express = require('express');
 const app = express();
+
+// Enable CORS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
 const port = 3000;
 
 app.get('/', (req, res) => {
@@ -12,18 +19,13 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+  res.json({ status: "healthy", uptime: process.uptime(), memory: process.memoryUsage() });
 });
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`App running on port ${port}`);
 });// Main branch change
 
-// Login endpoint
-app.post('/login', (req, res) => {
-  res.json({
-    message: 'Login endpoint ready',
-    status: 'success',
     timestamp: new Date().toISOString()
   });
 });
