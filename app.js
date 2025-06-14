@@ -18,3 +18,12 @@ app.get('/health', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`App running on port ${port}`);
 });// Main branch change
+
+// Login endpoint
+app.post('/login', (req, res) => {
+  res.json({
+    message: 'Login endpoint ready',
+    status: 'success',
+    timestamp: new Date().toISOString()
+  });
+});
