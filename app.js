@@ -18,3 +18,23 @@ app.get('/health', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`App running on port ${port}`);
 });// Main branch change
+
+// User management endpoints
+app.get('/users', (req, res) => {
+  res.json({
+    message: 'User list endpoint',
+    users: [
+      { id: 1, name: 'João', role: 'admin' },
+      { id: 2, name: 'Maria', role: 'user' }
+    ],
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.post('/users', (req, res) => {
+  res.json({
+    message: 'User created successfully',
+    status: 'created',
+    timestamp: new Date().toISOString()
+  });
+});
