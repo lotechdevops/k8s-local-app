@@ -2,7 +2,7 @@ name: Deploy to Local Kubernetes
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, develop, feature/* ]
   pull_request:
     branches: [ main, master ]
 
@@ -15,19 +15,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      # - name: Test environment
-      #   run: |
-      #     echo "Testing environment..."
-      #     echo "Using KUBECONFIG: $KUBECONFIG"
-      #     kubectl config current-context
-      #     kubectl cluster-info
-      #     echo "Docker version:"
-      #     docker --version
-      #     echo "Containerd version:"
-      #     ctr version
-      #     echo "Available namespaces:"
-      #     ctr namespaces list
           
       - name: Login to Docker Hub
         run: |
@@ -37,36 +24,42 @@ jobs:
       - name: Build and push to Docker Hub
         run: |
           echo "Building and pushing to Docker Hub..."
+          
+          # Converter nome da branch para tag válida (substitui / por -)
+          BRANCH_TAG=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          echo "Branch tag: $BRANCH_TAG"
+          
           # Build da imagem
-          docker build -t netinhos89/local-app:${{ github.sha }} .
-          docker tag netinhos89/local-app:${{ github.sha }} netinhos89/local-app:latest
+          docker build -t netinhos89/local-app:$BRANCH_TAG .
           
-          # Push para Docker Hub
-          docker push netinhos89/local-app:${{ github.sha }}
-          docker push netinhos89/local-app:latest
+          # Se for main/master, também criar tag latest
+          if [[ "${{ github.ref_name }}" == "main" || "${{ github.ref_name }}" == "master" ]]; then
+            docker tag netinhos89/local-app:$BRANCH_TAG netinhos89/local-app:latest
+            docker push netinhos89/local-app:latest
+          fi
           
-          echo "Image pushed to Docker Hub successfully"
+          # Push da tag da branch
+          docker push netinhos89/local-app:$BRANCH_TAG
+          
+          echo "Image pushed successfully as: netinhos89/local-app:$BRANCH_TAG"
           
       - name: Deploy to Kubernetes
+        if: github.ref_name == 'main' || github.ref_name == 'master'
         run: |
           echo "Deploying to Kubernetes..."
           kubectl apply -f k8s/
           
-          # Aguardar namespace ser criado
           kubectl wait --for=condition=Ready namespace/local-app --timeout=60s || true
           
-          # Atualizar imagem do deployment
-          kubectl set image deployment/local-app app=netinhos89/local-app:${{ github.sha }} -n local-app
+          # Deploy com tag da branch
+          BRANCH_TAG=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          kubectl set image deployment/local-app app=netinhos89/local-app:$BRANCH_TAG -n local-app
           
-          # Aguardar rollout
           kubectl rollout status deployment/local-app -n local-app --timeout=300s
           
       - name: Verify deployment
+        if: github.ref_name == 'main' || github.ref_name == 'master'
         run: |
           echo "Verifying deployment..."
           kubectl get pods -n local-app
           kubectl get service -n local-app
-          
-          # Mostrar logs dos pods
-          echo "Application logs:"
-          kubectl logs -n local-app -l app=local-app --tail=20
