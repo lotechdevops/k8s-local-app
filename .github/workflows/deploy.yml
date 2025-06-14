@@ -16,18 +16,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Test environment
-        run: |
-          echo "Testing environment..."
-          echo "Using KUBECONFIG: $KUBECONFIG"
-          kubectl config current-context
-          kubectl cluster-info
-          echo "Docker version:"
-          docker --version
-          echo "Containerd version:"
-          ctr version
-          echo "Available namespaces:"
-          ctr namespaces list
+      # - name: Test environment
+      #   run: |
+      #     echo "Testing environment..."
+      #     echo "Using KUBECONFIG: $KUBECONFIG"
+      #     kubectl config current-context
+      #     kubectl cluster-info
+      #     echo "Docker version:"
+      #     docker --version
+      #     echo "Containerd version:"
+      #     ctr version
+      #     echo "Available namespaces:"
+      #     ctr namespaces list
           
       - name: Login to Docker Hub
         run: |
