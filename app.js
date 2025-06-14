@@ -26,15 +26,7 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`App running on port ${port}`);
 });// Main branch change
 
-// Dashboard endpoint
-app.get('/dashboard', (req, res) => {
-  res.json({
-    message: 'Dashboard data',
-    stats: {
-      totalUsers: 25,
-      activeUsers: 18,
-      revenue: 'R$ 15.750,00'
-    },
+
     timestamp: new Date().toISOString()
   });
 });
