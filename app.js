@@ -19,22 +19,13 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+  res.json({ status: "healthy", uptime: process.uptime(), memory: process.memoryUsage() });
 });
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`App running on port ${port}`);
 });// Main branch change
 
-// Dashboard endpoint
-app.get('/dashboard', (req, res) => {
-  res.json({
-    message: 'Dashboard data',
-    stats: {
-      totalUsers: 25,
-      activeUsers: 18,
-      revenue: 'R$ 15.750,00'
-    },
     timestamp: new Date().toISOString()
   });
 });
