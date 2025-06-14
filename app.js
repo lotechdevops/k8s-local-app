@@ -19,7 +19,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+  res.json({ status: "healthy", uptime: process.uptime(), memory: process.memoryUsage() });
 });
 
 app.listen(port, '0.0.0.0', () => {
