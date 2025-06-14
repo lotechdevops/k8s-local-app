@@ -1,11 +1,11 @@
 name: Enterprise CI/CD Pipeline
 
 on:
-  # Build automático para qualquer push (como Bitbucket)
+  # Build automático para qualquer push
   push:
-    branches: [ '**' ]
+    branches: [main]
   
-  # Deploy manual via workflow_dispatch (como Jenkins)
+  # Deploy manual via workflow_dispatch
   workflow_dispatch:
     inputs:
       branch:
@@ -73,7 +73,7 @@ jobs:
           echo "- **Registry:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.branch.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Available for deployment" >> $GITHUB_STEP_SUMMARY
 
-  # Job para deploy manual (como Jenkins)
+  # Job para deploy manual
   deploy:
     if: github.event_name == 'workflow_dispatch'
     runs-on: self-hosted
