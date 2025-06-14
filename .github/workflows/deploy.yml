@@ -17,43 +17,48 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Test environment
-        env:
-          KUBECONFIG: /home/neto/.kube/config_cluster_local
         run: |
           echo "Testing environment..."
           echo "Using KUBECONFIG: $KUBECONFIG"
-          echo "Current kubectl context:"
           kubectl config current-context
-          echo "Available contexts:"
-          kubectl config get-contexts
-          echo "Cluster info:"
           kubectl cluster-info
-          echo "Container runtime:"
-          if command -v nerdctl &> /dev/null; then
-            echo "nerdctl version:"
-            nerdctl version
-          elif command -v ctr &> /dev/null; then
-            echo "ctr version:"
-            ctr version
-          else
-            echo "No container CLI found"
-          fi
+          echo "Docker version:"
+          docker --version
+          echo "Containerd version:"
+          ctr version
+          echo "Available namespaces:"
+          ctr namespaces list
           
-      - name: Build Docker image
+      - name: Login to Docker Hub
         run: |
-          echo "Building Docker image..."
-          docker build -t local-app:${{ github.sha }} .
-          docker tag local-app:${{ github.sha }} local-app:latest
+          echo "Logging in to Docker Hub..."
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          
+      - name: Build and push to Docker Hub
+        run: |
+          echo "Building and pushing to Docker Hub..."
+          # Build da imagem
+          docker build -t netinhos89/local-app:${{ github.sha }} .
+          docker tag netinhos89/local-app:${{ github.sha }} netinhos89/local-app:latest
+          
+          # Push para Docker Hub
+          docker push netinhos89/local-app:${{ github.sha }}
+          docker push netinhos89/local-app:latest
+          
+          echo "Image pushed to Docker Hub successfully"
           
       - name: Deploy to Kubernetes
         run: |
           echo "Deploying to Kubernetes..."
           kubectl apply -f k8s/
           
-          # Update deployment image
-          kubectl set image deployment/local-app app=local-app:${{ github.sha }} -n local-app
+          # Aguardar namespace ser criado
+          kubectl wait --for=condition=Ready namespace/local-app --timeout=60s || true
           
-          # Wait for rollout
+          # Atualizar imagem do deployment
+          kubectl set image deployment/local-app app=netinhos89/local-app:${{ github.sha }} -n local-app
+          
+          # Aguardar rollout
           kubectl rollout status deployment/local-app -n local-app --timeout=300s
           
       - name: Verify deployment
@@ -62,12 +67,6 @@ jobs:
           kubectl get pods -n local-app
           kubectl get service -n local-app
           
-          # Test the service
-          kubectl port-forward svc/local-app-service 8080:80 -n local-app &
-          sleep 5
-          curl -f http://localhost:8080/ || exit 1
-          
-      - name: Cleanup old images
-        run: |
-          echo "Cleaning up old Docker images..."
-          docker image prune -f
+          # Mostrar logs dos pods
+          echo "Application logs:"
+          kubectl logs -n local-app -l app=local-app --tail=20

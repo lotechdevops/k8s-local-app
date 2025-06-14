@@ -1,11 +1,10 @@
-# k8s/namespace.yaml
+# k8s/app.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: local-app
 
 ---
-# k8s/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +24,8 @@ spec:
     spec:
       containers:
       - name: app
-        image: local-app:latest
+        image: netinhos89/local-app:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
         env:
@@ -52,7 +52,6 @@ spec:
             cpu: "100m"
 
 ---
-# k8s/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -66,25 +65,3 @@ spec:
     port: 80
     targetPort: 3000
   type: ClusterIP
-
----
-# k8s/ingress.yaml (opcional - se você tiver ingress controller)
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: local-app-ingress
-  namespace: local-app
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  rules:
-  - host: local-app.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: local-app-service
-            port:
-              number: 80
